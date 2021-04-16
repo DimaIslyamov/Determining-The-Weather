@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import CoreLocation
 
 class ViewController: UIViewController {
 
@@ -16,17 +17,38 @@ class ViewController: UIViewController {
     
     var networkWeatherManager = NetworkWeatherManager()
     
+    lazy var locationManager: CLLocationManager = {
+       let lm = CLLocationManager()
+        lm.delegate = self
+        lm.desiredAccuracy = kCLLocationAccuracyKilometer
+        lm.requestWhenInUseAuthorization()
+        return lm
+    }()
+    
     @IBAction func searchPressed(_ sender: UIButton) {
         self.presentSearchAlertController(withTitle: "Enter city name", massage: nil, style: .alert) { city in
-            self.networkWeatherManager.fetchCurrentWeather(forCity: city)
+            self.networkWeatherManager.fethcCurrentWeather(forRequestType: .cityName(city: city))
         }
         
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
         networkWeatherManager.delegate = self
-        networkWeatherManager.fetchCurrentWeather(forCity: "London")
+        
+        if CLLocationManager.locationServicesEnabled() {
+            locationManager.requestLocation()
+        }
+    }
+    
+    func updateInterfaceWith(weather: CurrentWeather) {
+        DispatchQueue.main.async {
+            self.cityLabel.text = weather.cityName
+            self.temperatureLabel.text = weather.temperatureString
+            self.feelsLikeTemperatureLabel.text = weather.feelsLikeTemperatureString
+            self.weatherIconImageView.image = UIImage(systemName: weather.systemIconNameString)
+        }
     }
 }
 
